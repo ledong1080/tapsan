@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
+// Lấy BASE_URL từ Vite (ví dụ: '/tapsan/')
+const BASE_URL = import.meta.env.BASE_URL;
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Audio & Visualizer Logic ---
     const audio = document.getElementById('background-music') as HTMLAudioElement;
@@ -13,6 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let isMusicPlaying = false;
     let visualizerInitialized = false;
     let lastVolume = 0.4;
+
+    // --- Audio Path Fix for Deployment ---
+    // Đảm bảo đường dẫn file âm thanh được sửa cho deployment (BASE_URL)
+    if (audio && audio.src && audio.src.startsWith(window.location.origin + '/')) {
+        // Chỉ sửa nếu đường dẫn là root-relative (e.g., /assets/music.mp3)
+        // Lấy phần đường dẫn sau domain, và nối với BASE_URL
+        const pathAfterOrigin = audio.src.substring(window.location.origin.length);
+        const cleanPath = pathAfterOrigin.startsWith('/') ? pathAfterOrigin.substring(1) : pathAfterOrigin;
+        
+        // Cập nhật src với BASE_URL
+        audio.src = BASE_URL + cleanPath;
+    }
+
 
     const updateVolumeIcon = (volume: number) => {
         if (!volumeIcon) return;
@@ -100,14 +116,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const pages = document.querySelectorAll<HTMLElement>('.page');
     const totalPages = pages.length;
 
-    // --- Image Lazy Loading ---
+    // --- Image Lazy Loading (Đã sửa) ---
     const lazyLoadImages = (pageElement: HTMLElement | null) => {
         if (!pageElement) return;
         const images = pageElement.querySelectorAll<HTMLImageElement>('img[data-src]');
         images.forEach(img => {
             const dataSrc = img.getAttribute('data-src');
             if (dataSrc) {
-                img.src = dataSrc;
+                // Lấy đường dẫn sạch (bỏ dấu '/') và nối với BASE_URL
+                const cleanDataSrc = dataSrc.startsWith('/') ? dataSrc.substring(1) : dataSrc;
+                img.src = BASE_URL + cleanDataSrc; 
+                
                 img.removeAttribute('data-src');
                 // Add a class for fade-in effect when loaded
                 img.onload = () => {
