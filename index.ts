@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Audio Path Fix for Deployment ---
     // Đảm bảo đường dẫn file âm thanh được sửa cho deployment (BASE_URL)
-    if (audio && audio.src && audio.src.startsWith(window.location.origin + '/')) {
+  /*  if (audio && audio.src && audio.src.startsWith(window.location.origin + '/')) {
         // Chỉ sửa nếu đường dẫn là root-relative (e.g., /assets/music.mp3)
         // Lấy phần đường dẫn sau domain, và nối với BASE_URL
         const pathAfterOrigin = audio.src.substring(window.location.origin.length);
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         audio.src = BASE_URL + cleanPath;
     }
 
-
+*/
     const updateVolumeIcon = (volume: number) => {
         if (!volumeIcon) return;
         if (volume === 0) {
