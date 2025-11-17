@@ -26,12 +26,13 @@ body {
     font-family: var(--font-family);
     background-color: var(--background-color);
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: center; /* Căn giữa ngang */
+    align-items: center; /* Căn giữa dọc */
     min-height: 100vh;
-    overflow: hidden;
+    overflow-x: hidden; /* NGĂN TRÀN NGANG */
+    overflow-y: auto;
     cursor: none;
-    padding-left: 34vw; 
+    padding: 0;
 }
 
 /* ===================== FALLING LEAVES ===================== */
@@ -75,20 +76,20 @@ body {
     text-shadow: 
         /* White outline */
         -1px -1px 0 #fff,
-         1px -1px 0 #fff,
-        -1px  1px 0 #fff,
-         1px  1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff,
         /* Original glow effects */
         0 0 7px rgba(255, 255, 255, 0.7),
         0 0 10px rgba(209, 79, 138, 0.5),
         2px 2px 4px rgba(0,0,0,0.2);
     white-space: nowrap;
+    overflow: hidden; 
 }
 
-.running-text span {
-    display: inline-block;
-    padding-left: 100%;
-    animation: runText 12s linear infinite;
+.running-text {
+    animation: none; 
+    overflow: hidden; 
 }
 
 @keyframes runText {
@@ -107,35 +108,6 @@ body {
     z-index: 9999;
 }
 
-/* ===================== CHERRY BLOSSOM ===================== */
-#cherry-blossom-decoration {
-    position: fixed;
-    bottom: -20px;
-    right: -30px;
-    width: 35vw;
-    max-width: 450px;
-    min-width: 280px;
-    z-index: 5;
-    pointer-events: none;
-    opacity: 0;
-    transform: scale(0.95);
-    animation: blossom-fade-in 1.5s ease-out 0.5s forwards;
-}
-
-#cherry-blossom-decoration img {
-    width: 100%;
-    height: auto;
-    display: block;
-    transform: scaleX(-1);
-}
-
-@keyframes blossom-fade-in {
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
 /* ===================== BOOK ===================== */
 .book-container {
     display: flex;
@@ -147,13 +119,26 @@ body {
     padding-top: 65px;
     position: relative;
     z-index: 10;
+    max-width: 95vw;
+    
+    /* TRẠNG THÁI ĐÓNG (MẶC ĐỊNH) - Căn giữa: transform: translateX(0) */
+    transform: translateX(0);
+    transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* TRẠNG THÁI MỞ (JS thêm class này) - Dịch chuyển SANG TRÁI 1/2 chiều rộng trang */
+.book-container.is-open {
+    /* var(--book-width) là chiều rộng của một trang/cuốn sách đóng */
+    /* Dịch chuyển sang trái 1/2 chiều rộng sách (trang đơn) để cân bằng khối trang đôi. */
+    transform: translateX(calc(var(--book-width) / -2)); 
 }
 
 .book-container .instructions {
     color: #888;
     font-style: italic;
     position: absolute;
-    bottom: -10vw;
+    bottom: -40px; 
+    white-space: nowrap;
 }
 
 .book {
@@ -162,6 +147,7 @@ body {
     position: relative;
     transform-style: preserve-3d;
     transition: transform 0.5s;
+    transform-origin: center center;
 }
 
 .book-spine {
@@ -184,7 +170,6 @@ body {
     width: 100%;
     height: 100%;
     border-radius: 4px;
-    /* Dark spine with stylized white horizontal lines */
     background-color: #CCCCCC;
     background-image: repeating-linear-gradient(
         to bottom,
@@ -193,7 +178,7 @@ body {
         transparent 15px,
         transparent 40px
     );
-    background-position: 0 20px; /* Start lines after a small gap from top */
+    background-position: 0 20px; 
     box-shadow: 
         inset 3px 0 5px rgba(0, 0, 0, 0.5), 
         1px 0 2px rgba(0, 0, 0, 0.2);
@@ -256,36 +241,9 @@ body {
 }
 
 /* ===========================================================
-   🔊 SOUND VISUALIZER (NEON PINK - NEXT TOP MODEL STYLE)
-   =========================================================== */
-#sound-visualizer {
-    position: fixed;
-    bottom: 35px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 220px;
-    height: 50px;
+    🔊 SOUND VISUALIZER (NEON PINK - NEXT TOP MODEL STYLE)
+    =========================================================== */
 
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-
-    pointer-events: none;
-    z-index: 9990;
-}
-
-#sound-visualizer .bar {
-    width: 10px;
-    height: 8px;
-    background: var(--pink-neon);
-
-    border-radius: 4px;
-    box-shadow:
-        0 0 8px var(--pink-neon),
-        0 0 15px var(--pink-soft);
-
-    transition: height 0.08s ease-out;
-}
 /* === SOUND BAR HAI BÊN === */
 
 .sound-visualizer {
@@ -374,7 +332,6 @@ body {
     border: 2px solid white;
     box-shadow: 0 0 8px var(--pink-neon), 0 0 15px var(--pink-soft);
     cursor: pointer;
-    margin-top: -5px; /* Center thumb on track */
 }
 
 #volume-slider::-moz-range-thumb {
@@ -385,4 +342,66 @@ body {
     border: 2px solid white;
     box-shadow: 0 0 8px var(--pink-neon), 0 0 15px var(--pink-soft);
     cursor: pointer;
+}
+
+/* ===================== RESPONSIVE ADJUSTMENTS (QUAN TRỌNG CHO MOBILE) ===================== */
+@media (max-width: 768px) {
+    /* Điều chỉnh kích thước sách trên di động và iPad */
+    :root {
+        /* Giảm kích thước để sách không bị quá to */
+        --book-width: 90vw; 
+        --book-height: 120vw; /* Giữ tỷ lệ 3:4 cho màn hình dọc */
+    }
+    
+    /* Căn chỉnh cho mobile: Dùng VW để căn chỉnh tương ứng */
+    .book-container {
+        /* Đóng: Không dịch chuyển. Trang đơn được căn giữa */
+        transform: translateX(0);
+    }
+
+    .book-container.is-open {
+        /* Mở: Dịch chuyển SANG TRÁI 1/2 chiều rộng trang (90vw / 2 = 45vw) */
+        transform: translateX(calc(90vw / -2)); 
+    }
+
+
+    body {
+        /* Vô hiệu hóa 'cursor: none' trên di động vì nó không thân thiện với cảm ứng */
+        cursor: default;
+    }
+
+    .running-text {
+        font-size: 1.2em;
+        top: 5px;
+    }
+
+    /* Đảm bảo thanh âm thanh (visualizer) không bị dính vào mép màn hình */
+    #sound-left {
+        left: 5px;
+        width: 10px;
+    }
+    
+    #sound-right {
+        right: 5px;
+        width: 10px;
+    }
+    
+    .sound-visualizer .bar {
+        height: 8px;
+    }
+
+    /* Di chuyển Volume Slider lên trên một chút để không bị che bởi thanh điều hướng di động */
+    .volume-container {
+        bottom: 5px;
+        padding: 4px 8px;
+    }
+    
+    #volume-icon {
+        font-size: 18px;
+    }
+    
+    #volume-slider {
+        width: 50px;
+        height: 4px;
+    }
 }
