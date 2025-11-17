@@ -3,20 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-/* Lấy BASE_URL từ Vite (ví dụ: '/tapsan/') */
-/* Note: This variable is assumed to be available in the execution environment. */
+// Láº¥y BASE_URL tá»« Vite (vÃ­ dá»¥: '/tapsan/')
 const BASE_URL = import.meta.env.BASE_URL;
 
 document.addEventListener('DOMContentLoaded', () => {
-    /* --- LẤY CÁC PHẦN TỬ CHÍNH --- */
-    const bookContainer = document.querySelector('.book-container') as HTMLElement;
-    const pages = document.querySelectorAll<HTMLElement>('.page');
-    const totalPages = pages.length;
-    
-    /* --- Audio & Visualizer Logic --- */
+    // --- Audio & Visualizer Logic ---
     const audio = document.getElementById('background-music') as HTMLAudioElement;
-    /* Trang cuối cùng (Dùng tổng số trang để xác định chính xác) */
-    const lastPage = document.getElementById(`page-${totalPages}`);
+    const lastPage = document.getElementById('page-17');
     const volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
     const volumeIcon = document.getElementById('volume-icon') as HTMLElement;
     
@@ -24,15 +17,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let visualizerInitialized = false;
     let lastVolume = 0.5;
 
-    /* --- CÁC HÀM HỖ TRỢ AUDIO --- */
+    // --- Audio Path Fix for Deployment ---
+    // Äáº£m báº£o Ä‘Æ°á»ng dáº«n file Ã¢m thanh Ä‘Æ°á»£c sá»­a cho deployment (BASE_URL)
+  /*  if (audio && audio.src && audio.src.startsWith(window.location.origin + '/')) {
+        // Chá»‰ sá»­a náº¿u Ä‘Æ°á»ng dáº«n lÃ  root-relative (e.g., /assets/music.mp3)
+        // Láº¥y pháº§n Ä‘Æ°á»ng dáº«n sau domain, vÃ  ná»‘i vá»›i BASE_URL
+        const pathAfterOrigin = audio.src.substring(window.location.origin.length);
+        const cleanPath = pathAfterOrigin.startsWith('/') ? pathAfterOrigin.substring(1) : pathAfterOrigin;
+        
+        // Cáº­p nháº­t src vá»›i BASE_URL
+        audio.src = BASE_URL + cleanPath;
+    }
+
+*/
     const updateVolumeIcon = (volume: number) => {
         if (!volumeIcon) return;
         if (volume === 0) {
-            volumeIcon.textContent = '🔇';
+            volumeIcon.textContent = 'ðŸ”‡';
         } else if (volume < 0.5) {
-            volumeIcon.textContent = '🔉';
+            volumeIcon.textContent = 'ðŸ”‰';
         } else {
-            volumeIcon.textContent = '🔊';
+            volumeIcon.textContent = 'ðŸ”Š';
         }
     };
 
@@ -44,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /* --- Volume Controls --- */
+    // --- Volume Controls ---
     if (volumeSlider && audio && volumeIcon) {
         volumeSlider.addEventListener('input', (e) => {
             const value = (e.target as HTMLInputElement).value;
@@ -58,12 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         volumeIcon.addEventListener('click', () => {
             if (audio.volume > 0) {
-                /* Mute */
+                // Mute
                 audio.volume = 0;
                 volumeSlider.value = '0';
                 updateVolumeIcon(0);
             } else {
-                /* Unmute to last known volume or default */
+                // Unmute to last known volume or default
                 const newVolume = lastVolume > 0 ? lastVolume : 0.5;
                 audio.volume = newVolume;
                 volumeSlider.value = String(newVolume * 100);
@@ -72,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /* --- Visualizer Logic --- */
     const initializeVisualizer = () => {
         if (visualizerInitialized || !audio) return;
         visualizerInitialized = true;
@@ -80,7 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const bars = document.querySelectorAll<HTMLElement>(".sound-visualizer .bar");
         if (bars.length === 0) return;
 
-        /* Use a single AudioContext */
+        // Use a single AudioContext
+        // Fix: Cast window to any to support webkitAudioContext for older browsers.
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         const source = audioContext.createMediaElementSource(audio);
         const analyser = audioContext.createAnalyser();
@@ -97,9 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const allBars = document.querySelectorAll<HTMLElement>('.sound-visualizer .bar');
             allBars.forEach((bar, i) => {
-                /* Modulo to map more bars than available frequency bins */
+                // Modulo to map more bars than available frequency bins
                 const dataIndex = i % (analyser.frequencyBinCount);
-                const height = (dataArray[dataIndex] / 255) * 60; /* max height 60px */
+                const height = (dataArray[dataIndex] / 255) * 60; // max height 40px
                 bar.style.height = `${height}px`;
             });
         };
@@ -107,21 +112,23 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    /* --- Flipbook Logic --- */
+    // --- Flipbook Logic ---
+    const pages = document.querySelectorAll<HTMLElement>('.page');
+    const totalPages = pages.length;
 
-    /* --- Image Lazy Loading --- */
+    // --- Image Lazy Loading (ÄÃ£ sá»­a) ---
     const lazyLoadImages = (pageElement: HTMLElement | null) => {
         if (!pageElement) return;
         const images = pageElement.querySelectorAll<HTMLImageElement>('img[data-src]');
         images.forEach(img => {
             const dataSrc = img.getAttribute('data-src');
             if (dataSrc) {
-                /* Lấy đường dẫn sạch (bỏ dấu '/' và nối với BASE_URL */
+                // Láº¥y Ä‘Æ°á»ng dáº«n sáº¡ch (bá» dáº¥u '/') vÃ  ná»‘i vá»›i BASE_URL
                 const cleanDataSrc = dataSrc.startsWith('/') ? dataSrc.substring(1) : dataSrc;
                 img.src = BASE_URL + cleanDataSrc; 
                 
                 img.removeAttribute('data-src');
-                /* Add a class for fade-in effect when loaded */
+                // Add a class for fade-in effect when loaded
                 img.onload = () => {
                     img.classList.add('loaded');
                 };
@@ -129,15 +136,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    /* Preload images for the first couple of pages for a smooth start */
-    if (pages[0]) lazyLoadImages(pages[0]); /* Loads back of page 1 */
-    if (pages[1]) lazyLoadImages(pages[1]); /* Loads front and back of page 2 */
+    // Preload images for the first couple of pages for a smooth start
+    if (pages[0]) lazyLoadImages(pages[0]); // Loads back of page 1
+    if (pages[1]) lazyLoadImages(pages[1]); // Loads front and back of page 2
 
 
-    /* Use an array to track the flipped state of each page */
+    // Use an array to track the flipped state of each page
     const flippedState = new Array(totalPages).fill(false);
 
-    /* Function to update Z-indexes based on the flipped state */
+    // Function to update Z-indexes based on the flipped state
     const updateZIndexes = () => {
         let unFlippedCounter = totalPages;
         let flippedCounter = 1;
@@ -152,53 +159,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    /* Set initial z-indexes */
+    // Set initial z-indexes
     updateZIndexes();
 
     pages.forEach((page, index) => {
         page.addEventListener('click', () => {
-            /* Start music on the first interaction if it hasn't started yet */
+            // Start music on the first interaction if it hasn't started yet
             if (!isMusicPlaying && audio) {
                 audio.play().catch(error => console.error("Audio play failed:", error));
                 isMusicPlaying = true;
                 initializeVisualizer();
             }
 
-            /* Preload images for the next pages to ensure smooth flipping */
+            // Preload images for the next pages to ensure smooth flipping
             const nextPage = pages[index + 1];
             const pageAfterNext = pages[index + 2];
             if (nextPage) lazyLoadImages(nextPage);
             if (pageAfterNext) lazyLoadImages(pageAfterNext);
 
-            /* Toggle animation class */
+            // Toggle animation class
             page.classList.toggle('flipped');
-            
-            /* Update the state */
+            // Update the state
             flippedState[index] = !flippedState[index];
-            
-            /* Recalculate z-indexes for all pages */
+            // Recalculate z-indexes for all pages
             updateZIndexes();
 
-            /* === LOGIC CĂN GIỮA (CHỈ XỬ LÝ TRANG BÌA - INDEX 0) === */
-            /* Khi trang 1 (index 0) được lật, ta chuyển trạng thái sách từ Đóng sang Mở. */
-            if (index === 0) {
-                if (page.classList.contains('flipped')) {
-                    /* Sách MỞ: Áp dụng is-open để dịch chuyển SANG TRÁI */
-                    bookContainer.classList.add('is-open');
-                } else {
-                    /* Sách ĐÓNG: Loại bỏ is-open để sách trở về vị trí TRUNG TÂM */
-                    bookContainer.classList.remove('is-open');
-                }
-            }
-            /* ========================================================= */
-
-            /* Sync music with the last page flip */
+            // Sync music with the last page flip
             if (page === lastPage && audio) {
                 if (page.classList.contains('flipped')) {
-                    /* If last page is flipped, stop the music */
+                    // If last page is flipped, stop the music
                     audio.pause();
                 } else {
-                    /* If last page is flipped back, resume music */
+                    // If last page is flipped back, resume music
                     audio.play().catch(error => console.error("Audio play failed:", error));
                 }
             }
@@ -206,23 +198,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    /* --- Heart Cursor Effect Logic --- */
+    // --- Heart Cursor Effect Logic ---
     const canvas = document.getElementById('sparkle-canvas') as HTMLCanvasElement;
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    interface Particle {
-        x: number;
-        y: number;
-        size: number;
-        speedX: number;
-        speedY: number;
-        color: string;
-        rotation: number;
-        rotationSpeed: number;
-    }
-    
     let particles: Particle[] = [];
     const mouse = {
         x: -100,
@@ -232,25 +213,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('mousemove', (event) => {
         mouse.x = event.x;
         mouse.y = event.y;
-        /* Create a burst of particles on move */
+        // Create a burst of particles on move
         for (let i = 0; i < 2; i++) {
             particles.push(new Particle());
         }
     });
-    
-    /* Thêm xử lý chạm cho thiết bị di động */
-    window.addEventListener('touchmove', (event) => {
-        if (event.touches.length > 0) {
-            const touch = event.touches[0];
-            mouse.x = touch.clientX;
-            mouse.y = touch.clientY;
-            /* Create a burst of particles on move */
-            for (let i = 0; i < 2; i++) {
-                particles.push(new Particle());
-            }
-        }
-    });
-
 
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
@@ -270,20 +237,20 @@ document.addEventListener('DOMContentLoaded', () => {
         constructor() {
             this.x = mouse.x;
             this.y = mouse.y;
-            this.size = Math.random() * 5 + 2; /* Adjusted size for hearts */
+            this.size = Math.random() * 5 + 2; // Adjusted size for hearts
             this.speedX = Math.random() * 3 - 1.5;
             this.speedY = Math.random() * 3 - 1.5;
-            /* Colors in the pink range */
+            // Colors in the pink range
             this.color = `hsl(${Math.random() * 20 + 330}, 100%, 75%)`;
-            this.rotation = (Math.random() - 0.5) * 0.5; /* Slight initial rotation */
-            this.rotationSpeed = (Math.random() - 0.5) * 0.02; /* Slow rotation */
+            this.rotation = (Math.random() - 0.5) * 0.5; // Slight initial rotation
+            this.rotationSpeed = (Math.random() - 0.5) * 0.02; // Slow rotation
         }
 
         update() {
             this.x += this.speedX;
             this.y += this.speedY;
             this.rotation += this.rotationSpeed;
-            if (this.size > 0.2) this.size -= 0.1; /* Fade out a bit faster */
+            if (this.size > 0.2) this.size -= 0.1; // Fade out a bit faster
         }
 
         draw() {
@@ -292,17 +259,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.rotation);
                 
-                /* Use a scale based on particle size. The heart path's native width is ~110px. */
+                // Use a scale based on particle size. The heart path's native width is ~110px.
                 const scale = this.size / 60;
                 ctx.scale(scale, scale);
                 
-                /* The original path's center is roughly (75, 75). */
-                /* We translate by this amount to center the drawing at the particle's origin. */
+                // The original path's center is roughly (75, 75).
+                // We translate by this amount to center the drawing at the particle's origin.
                 ctx.translate(-75, -75);
 
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
-                /* A standard bezier curve path for a heart shape */
+                // A standard bezier curve path for a heart shape
                 ctx.moveTo(75, 40);
                 ctx.bezierCurveTo(75, 37, 70, 25, 50, 25);
                 ctx.bezierCurveTo(20, 25, 20, 62.5, 20, 62.5);
@@ -328,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /* --- Falling Leaves Effect Logic --- */
+    // --- Falling Leaves Effect Logic ---
     const leafContainer = document.getElementById('falling-leaves-container');
     if (leafContainer) {
         const numberOfLeaves = 50; 
@@ -337,16 +304,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const leaf = document.createElement('div');
             leaf.classList.add('leaf');
             
-            /* Randomize properties for a natural look */
+            // Randomize properties for a natural look
             leaf.style.left = `${Math.random() * 100}vw`;
-            leaf.style.animationDuration = `${Math.random() * 8 + 7}s`; /* Duration between 7s and 15s */
-            leaf.style.animationDelay = `-${Math.random() * 10}s`; /* Negative delay starts them mid-animation */
-            leaf.style.opacity = String(Math.random() * 0.6 + 0.4); /* Opacity from 0.4 to 1.0 */
+            leaf.style.animationDuration = `${Math.random() * 8 + 7}s`; // Duration between 7s and 15s
+            leaf.style.animationDelay = `-${Math.random() * 10}s`; // Negative delay starts them mid-animation
+            leaf.style.opacity = String(Math.random() * 0.6 + 0.4); // Opacity from 0.4 to 1.0
             
-            const size = Math.random() * 10 + 5; /* size from 5px to 15px */
+            const size = Math.random() * 10 + 5; // size from 5px to 15px
             leaf.style.width = `${size}px`;
             leaf.style.height = `${size}px`;
-            leaf.style.backgroundColor = `hsl(330, 100%, ${Math.random() * 15 + 75}%)`; /* Shades of pink */
+            leaf.style.backgroundColor = `hsl(330, 100%, ${Math.random() * 15 + 75}%)`; // Shades of pink
             
             leafContainer.appendChild(leaf);
         }
