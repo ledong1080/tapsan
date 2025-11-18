@@ -5,8 +5,8 @@
 
 /* ===================== ROOT ===================== */
 :root {
-    --book-width: 65vmin;
-    --book-height: 87.5vmin;
+    --book-width: 60vmin;
+    --book-height: 82vmin;
     --background-color: #ECECEC;
     --shadow-color: rgba(247, 26, 236, 0.308);
     --font-family: 'Quicksand', sans-serif;
@@ -31,7 +31,7 @@ body {
     min-height: 100vh;
     overflow: hidden;
     cursor: none;
-    padding-left: 34vw; 
+    /* padding-left: 28vw; <-- ĐÃ XÓA ĐỂ ÁP DỤNG CANH LỀ ĐỘNG */
 }
 
 /* ===================== FALLING LEAVES ===================== */
@@ -73,12 +73,10 @@ body {
     color: #d14f8a;
     text-transform: uppercase;
     text-shadow: 
-        /* White outline */
         -1px -1px 0 #fff,
          1px -1px 0 #fff,
         -1px  1px 0 #fff,
          1px  1px 0 #fff,
-        /* Original glow effects */
         0 0 7px rgba(255, 255, 255, 0.7),
         0 0 10px rgba(209, 79, 138, 0.5),
         2px 2px 4px rgba(0,0,0,0.2);
@@ -133,7 +131,7 @@ body {
     to {
         opacity: 1;
         transform: scale(1);
-    }
+  }
 }
 
 /* ===================== BOOK ===================== */
@@ -184,7 +182,6 @@ body {
     width: 100%;
     height: 100%;
     border-radius: 4px;
-    /* Dark spine with stylized white horizontal lines */
     background-color: #CCCCCC;
     background-image: repeating-linear-gradient(
         to bottom,
@@ -193,7 +190,7 @@ body {
         transparent 15px,
         transparent 40px
     );
-    background-position: 0 20px; /* Start lines after a small gap from top */
+    background-position: 0 20px;
     box-shadow: 
         inset 3px 0 5px rgba(0, 0, 0, 0.5), 
         1px 0 2px rgba(0, 0, 0, 0.2);
@@ -221,7 +218,6 @@ body {
     position: absolute;
     width: 100%;
     height: 100%;
-    -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     background: white;
     border-radius: 15px;
@@ -256,7 +252,7 @@ body {
 }
 
 /* ===========================================================
-   🔊 SOUND VISUALIZER (NEON PINK - NEXT TOP MODEL STYLE)
+   🔊 SOUND VISUALIZER CENTER (GIỮ NGUYÊN)
    =========================================================== */
 #sound-visualizer {
     position: fixed;
@@ -278,54 +274,116 @@ body {
     width: 10px;
     height: 8px;
     background: var(--pink-neon);
-
     border-radius: 4px;
     box-shadow:
         0 0 8px var(--pink-neon),
         0 0 15px var(--pink-soft);
-
     transition: height 0.08s ease-out;
 }
-/* === SOUND BAR HAI BÊN === */
 
-.sound-visualizer {
+
+/* ===========================================================
+   🔊 === SOUND BAR HAI BÊN (PHONG CÁCH MỚI) ===
+   (Đây là khối được thay thế, giả định bạn vẫn có
+   #sound-left và #sound-right trong HTML)
+   =========================================================== */
+
+/* XÓA: #sound-left, #sound-right, và khối cũ cho .sound-visualizer */
+
+/* DÁN KHỐI MỚI NÀY VÀO (Đặt đối xứng với volume-container) */
+#sound-right-corner {
     position: fixed;
-    top: 50%;
-    width: 18px;
-    height: 120px;
-    transform: translateY(-50%);
+    bottom: 15px; /* Ngang hàng với volume-container */
+    right: 15px;  /* Đặt ở góc phải */
+    
+    /* Thiết lập cho 12 thanh bar nằm ngang */
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    z-index: 9999;
+    flex-direction: row; /* CHUYỂN THANH BAR THEO CHIỀU NGANG */
+    justify-content: flex-end; /* Bắt đầu từ phải qua trái (tùy chọn) */
+    align-items: center; /* Căn giữa theo chiều dọc */
+    gap: 4px; /* Khoảng cách giữa các thanh bar nhỏ hơn */
+    
+    width: auto; /* Chiều rộng tự điều chỉnh */
+    height: 30px; /* Chiều cao cố định cho container */
+    
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 6px 12px;
+    border-radius: 50px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s;
+    
+    z-index: 9990;
 }
 
-#sound-left {
-    left: 15px;
-}
-
-#sound-right {
-    right: 15px;
+/* Áp dụng cho các thanh bar bên trong */
+#sound-right-corner .bar {
+    width: 6px; /* Giảm chiều rộng */
+    height: 6px; /* Chiều cao tối thiểu (được thay đổi bằng JS) */
+    border-radius: 3px;
+    /* Giữ lại transition, box-shadow và các màu khác */
 }
 
 .sound-visualizer .bar {
-    width: 100%;
-    height: 12px;
-    background: var(--pink-neon);
-    border-radius: 4px;
+    width: 12px; /* Chiều rộng từ ví dụ */
+    height: 14px; /* Chiều cao tối thiểu */
+    background: var(--pink-neon); /* Màu mặc định */
+    border-radius: 10px; /* Bo tròn từ ví dụ */
     opacity: 0.9;
-    transition: height 0.15s linear;
+    
+    /* Giữ lại transition để JS hoạt động mượt */
+    transition: height 0.1s linear; 
+    
     box-shadow: 0 0 8px var(--pink-neon), 0 0 15px var(--pink-soft);
 }
 
+/* Áp dụng màu sắc từ file ví dụ của bạn.
+*/
+.sound-visualizer .bar:nth-child(1) {
+    background-color: #d715d7;
+}
+.sound-visualizer .bar:nth-child(2) {
+    background-color: #1518d7;
+}
+.sound-visualizer .bar:nth-child(3) {
+    background-color: #f1ee36;
+}
+.sound-visualizer .bar:nth-child(4) {
+    background-color: #15d735;
+}
+.sound-visualizer .bar:nth-child(5) {
+    background-color: #d76415;
+}
+.sound-visualizer .bar:nth-child(1) {
+    background-color: #15d76c;
+}
+.sound-visualizer .bar:nth-child(2) {
+    background-color: #1518d7;
+}
+.sound-visualizer .bar:nth-child(3) {
+    background-color: #d71579;
+}
+.sound-visualizer .bar:nth-child(4) {
+    background-color: #15d735;
+}
+.sound-visualizer .bar:nth-child(5) {
+    background-color: #f7b182;
+}.sound-visualizer .bar:nth-child(4) {
+    background-color: #f51369;
+}
+.sound-visualizer .bar:nth-child(5) {
+    background-color: #0f0be2;
+}
 /* ===================== VOLUME SLIDER ===================== */
 .volume-container {
+    /* LỖI ĐÃ SỬA: Xóa chữ 't' ở dòng dưới */
     position: fixed;
     bottom: 15px;
     left: 15px;
     display: flex;
     align-items: center;
-    z-index: 9990; /* Below cursor, above most elements */
+    z-index: 9990;
     background-color: rgba(255, 255, 255, 0.2);
     padding: 6px 12px;
     border-radius: 50px;
@@ -353,11 +411,10 @@ body {
 }
 
 #volume-slider {
-    -webkit-appearance: none;
     appearance: none;
     width: 70px;
     height: 6px;
-    background: rgba(255, 80, 170, 0.3); /* Soft pink track */
+    background: rgba(255, 80, 170, 0.3);
     border-radius: 5px;
     outline: none;
     transition: opacity 0.2s;
@@ -365,7 +422,6 @@ body {
 }
 
 #volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
     appearance: none;
     width: 16px;
     height: 16px;
@@ -374,7 +430,7 @@ body {
     border: 2px solid white;
     box-shadow: 0 0 8px var(--pink-neon), 0 0 15px var(--pink-soft);
     cursor: pointer;
-    margin-top: -5px; /* Center thumb on track */
+    margin-top: -5px;
 }
 
 #volume-slider::-moz-range-thumb {
@@ -385,4 +441,23 @@ body {
     border: 2px solid white;
     box-shadow: 0 0 8px var(--pink-neon), 0 0 15px var(--pink-soft);
     cursor: pointer;
+}
+
+/* ===================== BOOK ALIGNMENT ===================== */
+/* (KHỐI NÀY ĐƯỢC THÊM VÀO) */
+.book-wrapper {
+    position: relative;
+    /* Mặc định là canh giữa trang đôi (gáy sách ở giữa) */
+    transform: translateX(calc(var(--book-width) / 2));
+    transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Căn lề cho trang bìa (trang đơn bên phải) */
+.book-wrapper.align-single-right {
+    transform: translateX(0);
+}
+
+/* Căn lề cho trang cuối (trang đơn bên trái) */
+.book-wrapper.align-single-left {
+    transform: translateX(var(--book-width));
 }

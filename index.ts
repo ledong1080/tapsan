@@ -3,329 +3,275 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-// Láº¥y BASE_URL tá»« Vite (vÃ­ dá»¥: '/tapsan/')
+// Lấy BASE_URL từ Vite (ví dụ: '/tapsan/')
 const BASE_URL = import.meta.env.BASE_URL;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Audio & Visualizer Logic ---
+
+    /* -------------------------------------------------------
+     * 🎵 AUDIO & CONTROLS
+     * ------------------------------------------------------- */
     const audio = document.getElementById('background-music') as HTMLAudioElement;
     const lastPage = document.getElementById('page-17');
     const volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
     const volumeIcon = document.getElementById('volume-icon') as HTMLElement;
-    
+
     let isMusicPlaying = false;
     let visualizerInitialized = false;
     let lastVolume = 0.5;
 
-    // --- Audio Path Fix for Deployment ---
-    // Äáº£m báº£o Ä‘Æ°á»ng dáº«n file Ã¢m thanh Ä‘Æ°á»£c sá»­a cho deployment (BASE_URL)
-  /*  if (audio && audio.src && audio.src.startsWith(window.location.origin + '/')) {
-        // Chá»‰ sá»­a náº¿u Ä‘Æ°á»ng dáº«n lÃ  root-relative (e.g., /assets/music.mp3)
-        // Láº¥y pháº§n Ä‘Æ°á»ng dáº«n sau domain, vÃ  ná»‘i vá»›i BASE_URL
-        const pathAfterOrigin = audio.src.substring(window.location.origin.length);
-        const cleanPath = pathAfterOrigin.startsWith('/') ? pathAfterOrigin.substring(1) : pathAfterOrigin;
-        
-        // Cáº­p nháº­t src vá»›i BASE_URL
-        audio.src = BASE_URL + cleanPath;
-    }
-
-*/
     const updateVolumeIcon = (volume: number) => {
-        if (!volumeIcon) return;
-        if (volume === 0) {
-            volumeIcon.textContent = 'ðŸ”‡';
-        } else if (volume < 0.5) {
-            volumeIcon.textContent = 'ðŸ”‰';
-        } else {
-            volumeIcon.textContent = 'ðŸ”Š';
-        }
+        if (volume === 0) volumeIcon.textContent = "🔇";
+        else if (volume < 0.5) volumeIcon.textContent = "🔉";
+        else volumeIcon.textContent = "🔊";
     };
 
     if (audio) {
         audio.volume = lastVolume;
-        if (volumeSlider) {
+        volumeSlider.value = String(audio.volume * 100);
+        updateVolumeIcon(audio.volume);
+    }
+
+    // Volume slider
+    volumeSlider?.addEventListener("input", (e) => {
+        const val = Number((e.target as HTMLInputElement).value) / 100;
+        audio.volume = val;
+        if (val > 0) lastVolume = val;
+        updateVolumeIcon(val);
+    });
+
+    // Mute toggle
+    volumeIcon?.addEventListener("click", () => {
+        if (audio.volume > 0) {
+            audio.volume = 0;
+            volumeSlider.value = "0";
+            updateVolumeIcon(0);
+        } else {
+            audio.volume = lastVolume || 0.5;
             volumeSlider.value = String(audio.volume * 100);
             updateVolumeIcon(audio.volume);
         }
-    }
+    });
 
-    // --- Volume Controls ---
-    if (volumeSlider && audio && volumeIcon) {
-        volumeSlider.addEventListener('input', (e) => {
-            const value = (e.target as HTMLInputElement).value;
-            const newVolume = parseInt(value, 10) / 100;
-            audio.volume = newVolume;
-            if (newVolume > 0) {
-                lastVolume = newVolume;
-            }
-            updateVolumeIcon(newVolume);
+   /* -------------------------------------------------------
+ * 🔊 VISUALIZER (SOUND-BARS mới)
+ * ------------------------------------------------------- */
+const initializeVisualizer = () => {
+    // 1. Dùng .sound-visualizer .bar để chọn tất cả 12 thanh từ #sound-left và #sound-right.
+    const bars = document.querySelectorAll<HTMLElement>("#sound-right-corner .bar");
+    
+    if (visualizerInitialized || !audio || bars.length === 0) return;
+    visualizerInitialized = true;
+
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const source = audioContext.createMediaElementSource(audio);
+    const analyser = audioContext.createAnalyser();
+
+    analyser.fftSize = 64;
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
+
+    const animate = () => {
+        requestAnimationFrame(animate);
+        analyser.getByteFrequencyData(freqData);
+
+        // ❌ XÓA DÒNG TRUY VẤN DOM THỪA VÀ SAI LÀ 'const allBars = document.querySelectorAll<HTMLElement>("#sound-bars .bar");'
+
+        // SỬ DỤNG biến 'bars' đã được chọn ở trên.
+        bars.forEach((bar, i) => { 
+            const idx = i % freqData.length;
+            const height = 10 + (freqData[idx] / 255) * 50;  
+            bar.style.height = `${height}px`;
         });
-
-        volumeIcon.addEventListener('click', () => {
-            if (audio.volume > 0) {
-                // Mute
-                audio.volume = 0;
-                volumeSlider.value = '0';
-                updateVolumeIcon(0);
-            } else {
-                // Unmute to last known volume or default
-                const newVolume = lastVolume > 0 ? lastVolume : 0.5;
-                audio.volume = newVolume;
-                volumeSlider.value = String(newVolume * 100);
-                updateVolumeIcon(newVolume);
-            }
-        });
-    }
-
-    const initializeVisualizer = () => {
-        if (visualizerInitialized || !audio) return;
-        visualizerInitialized = true;
-
-        const bars = document.querySelectorAll<HTMLElement>(".sound-visualizer .bar");
-        if (bars.length === 0) return;
-
-        // Use a single AudioContext
-        // Fix: Cast window to any to support webkitAudioContext for older browsers.
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const source = audioContext.createMediaElementSource(audio);
-        const analyser = audioContext.createAnalyser();
-
-        analyser.fftSize = 64;
-        source.connect(analyser);
-        analyser.connect(audioContext.destination);
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-        const animateBars = () => {
-            requestAnimationFrame(animateBars);
-            analyser.getByteFrequencyData(dataArray);
-
-            const allBars = document.querySelectorAll<HTMLElement>('.sound-visualizer .bar');
-            allBars.forEach((bar, i) => {
-                // Modulo to map more bars than available frequency bins
-                const dataIndex = i % (analyser.frequencyBinCount);
-                const height = (dataArray[dataIndex] / 255) * 60; // max height 40px
-                bar.style.height = `${height}px`;
-            });
-        };
-        animateBars();
     };
 
-
-    // --- Flipbook Logic ---
+    animate();
+};
+    /* -------------------------------------------------------
+     * 📖 FLIPBOOK & LAZY LOAD
+     * ------------------------------------------------------- */
+    
+    // <<< THÊM MỚI (Để canh lề sách)
+    const bookWrapper = document.getElementById("bookWrapper") as HTMLElement;
+    
     const pages = document.querySelectorAll<HTMLElement>('.page');
     const totalPages = pages.length;
 
-    // --- Image Lazy Loading (ÄÃ£ sá»­a) ---
     const lazyLoadImages = (pageElement: HTMLElement | null) => {
         if (!pageElement) return;
-        const images = pageElement.querySelectorAll<HTMLImageElement>('img[data-src]');
-        images.forEach(img => {
-            const dataSrc = img.getAttribute('data-src');
-            if (dataSrc) {
-                // Láº¥y Ä‘Æ°á»ng dáº«n sáº¡ch (bá» dáº¥u '/') vÃ  ná»‘i vá»›i BASE_URL
-                const cleanDataSrc = dataSrc.startsWith('/') ? dataSrc.substring(1) : dataSrc;
-                img.src = BASE_URL + cleanDataSrc; 
-                
-                img.removeAttribute('data-src');
-                // Add a class for fade-in effect when loaded
-                img.onload = () => {
-                    img.classList.add('loaded');
-                };
-            }
+        const imgs = pageElement.querySelectorAll<HTMLImageElement>('img[data-src]');
+        imgs.forEach(image => {
+            const ds = image.getAttribute('data-src');
+            if (!ds) return;
+
+            const clean = ds.startsWith("/") ? ds.substring(1) : ds;
+            image.src = BASE_URL + clean;
+
+            image.onload = () => image.classList.add("loaded");
+            image.removeAttribute('data-src');
         });
     };
 
-    // Preload images for the first couple of pages for a smooth start
-    if (pages[0]) lazyLoadImages(pages[0]); // Loads back of page 1
-    if (pages[1]) lazyLoadImages(pages[1]); // Loads front and back of page 2
+    // Preload 2 trang đầu
+    if (pages[0]) lazyLoadImages(pages[0]);
+    if (pages[1]) lazyLoadImages(pages[1]);
 
-
-    // Use an array to track the flipped state of each page
-    const flippedState = new Array(totalPages).fill(false);
-
-    // Function to update Z-indexes based on the flipped state
-    const updateZIndexes = () => {
-        let unFlippedCounter = totalPages;
-        let flippedCounter = 1;
-        pages.forEach((page, index) => {
-            if (flippedState[index]) {
-                page.style.zIndex = String(flippedCounter);
-                flippedCounter++;
-            } else {
-                page.style.zIndex = String(unFlippedCounter);
-                unFlippedCounter--;
-            }
-        });
-    };
+    const flipped = new Array(totalPages).fill(false);
     
-    // Set initial z-indexes
-    updateZIndexes();
+    // <<< THÊM MỚI (Hàm canh lề sách)
+    const updateBookAlignment = () => {
+        if (!bookWrapper) return;
+
+        const flippedCount = flipped.filter(Boolean).length;
+
+        if (flippedCount === 0) {
+            // Trang bìa: canh trang đơn (bên phải)
+            bookWrapper.className = 'book-wrapper align-single-right';
+        } else if (flippedCount === totalPages) {
+            // Trang cuối: canh trang đơn (bên trái)
+            bookWrapper.className = 'book-wrapper align-single-left';
+        } else {
+            // Trang đôi: canh giữa gáy sách (mặc định)
+            bookWrapper.className = 'book-wrapper'; 
+        }
+    };
+
+    const updateZIndexes = () => {
+        let topUnflipped = totalPages;
+        let bottomFlipped = 1;
+        pages.forEach((p, i) => {
+            p.style.zIndex = flipped[i] ? String(bottomFlipped++) : String(topUnflipped--);
+        });
+        
+        updateBookAlignment(); // <<< THÊM MỚI (Gọi hàm canh lề)
+    };
+
+    updateZIndexes(); // Tự động gọi canh lề lần đầu
 
     pages.forEach((page, index) => {
-        page.addEventListener('click', () => {
-            // Start music on the first interaction if it hasn't started yet
-            if (!isMusicPlaying && audio) {
-                audio.play().catch(error => console.error("Audio play failed:", error));
+        page.addEventListener("click", () => {
+            // Bắt đầu nghe nhạc
+            if (!isMusicPlaying) {
+                audio.play().catch(console.warn);
                 isMusicPlaying = true;
                 initializeVisualizer();
             }
 
-            // Preload images for the next pages to ensure smooth flipping
-            const nextPage = pages[index + 1];
-            const pageAfterNext = pages[index + 2];
-            if (nextPage) lazyLoadImages(nextPage);
-            if (pageAfterNext) lazyLoadImages(pageAfterNext);
+            // Lazy load trang kế tiếp
+            lazyLoadImages(pages[index + 1]);
+            lazyLoadImages(pages[index + 2]);
 
-            // Toggle animation class
+            // Lật trang
             page.classList.toggle('flipped');
-            // Update the state
-            flippedState[index] = !flippedState[index];
-            // Recalculate z-indexes for all pages
-            updateZIndexes();
+            flipped[index] = !flipped[index];
+            updateZIndexes(); // Tự động gọi `updateBookAlignment`
 
-            // Sync music with the last page flip
-            if (page === lastPage && audio) {
-                if (page.classList.contains('flipped')) {
-                    // If last page is flipped, stop the music
-                    audio.pause();
-                } else {
-                    // If last page is flipped back, resume music
-                    audio.play().catch(error => console.error("Audio play failed:", error));
-                }
+            // Nếu mở trang cuối → tắt nhạc
+            if (page === lastPage) {
+                if (page.classList.contains("flipped")) audio.pause();
+                else audio.play().catch(console.warn);
             }
         });
     });
 
-
-    // --- Heart Cursor Effect Logic ---
+    /* -------------------------------------------------------
+     * 💖 HEART CURSOR
+     * ------------------------------------------------------- */
     const canvas = document.getElementById('sparkle-canvas') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext("2d");
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
 
     let particles: Particle[] = [];
-    const mouse = {
-        x: -100,
-        y: -100
-    };
+    const mouse = { x: -100, y: -100 };
 
-    window.addEventListener('mousemove', (event) => {
-        mouse.x = event.x;
-        mouse.y = event.y;
-        // Create a burst of particles on move
-        for (let i = 0; i < 2; i++) {
-            particles.push(new Particle());
-        }
+    window.addEventListener("mousemove", (e) => {
+        mouse.x = e.x; mouse.y = e.y;
+        for (let i = 0; i < 1; i++) particles.push(new Particle());
     });
 
-    window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+    window.addEventListener("resize", () => {
+        canvas.width = innerWidth;
+        canvas.height = innerHeight;
     });
 
     class Particle {
-        x: number;
-        y: number;
-        size: number;
-        speedX: number;
-        speedY: number;
-        color: string;
-        rotation: number;
-        rotationSpeed: number;
-
-        constructor() {
-            this.x = mouse.x;
-            this.y = mouse.y;
-            this.size = Math.random() * 5 + 2; // Adjusted size for hearts
-            this.speedX = Math.random() * 3 - 1.5;
-            this.speedY = Math.random() * 3 - 1.5;
-            // Colors in the pink range
-            this.color = `hsl(${Math.random() * 20 + 330}, 100%, 75%)`;
-            this.rotation = (Math.random() - 0.5) * 0.5; // Slight initial rotation
-            this.rotationSpeed = (Math.random() - 0.5) * 0.02; // Slow rotation
-        }
+        x = mouse.x;
+        y = mouse.y;
+        size = Math.random() * 5 + 2;
+        speedX = Math.random() * 3 - 1.5;
+        speedY = Math.random() * 3 - 1.5;
+        rotation = (Math.random() - 0.5) * 0.5;
+        rotationSpeed = (Math.random() - 0.5) * 0.02;
+        color = `hsl(${330 + Math.random() * 20}, 100%, 75%)`;
 
         update() {
             this.x += this.speedX;
             this.y += this.speedY;
             this.rotation += this.rotationSpeed;
-            if (this.size > 0.2) this.size -= 0.1; // Fade out a bit faster
+            if (this.size > 0.2) this.size -= 0.1;
         }
 
         draw() {
-            if (ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-                
-                // Use a scale based on particle size. The heart path's native width is ~110px.
-                const scale = this.size / 60;
-                ctx.scale(scale, scale);
-                
-                // The original path's center is roughly (75, 75).
-                // We translate by this amount to center the drawing at the particle's origin.
-                ctx.translate(-75, -75);
+            if (!ctx) return;
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
 
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                // A standard bezier curve path for a heart shape
-                ctx.moveTo(75, 40);
-                ctx.bezierCurveTo(75, 37, 70, 25, 50, 25);
-                ctx.bezierCurveTo(20, 25, 20, 62.5, 20, 62.5);
-                ctx.bezierCurveTo(20, 80, 40, 102, 75, 120);
-                ctx.bezierCurveTo(110, 102, 130, 80, 130, 62.5);
-                ctx.bezierCurveTo(130, 62.5, 130, 25, 100, 25);
-                ctx.bezierCurveTo(85, 25, 75, 37, 75, 40);
-                ctx.fill();
+            const scale = this.size / 60;
+            ctx.scale(scale, scale);
+            ctx.translate(-75, -75);
 
-                ctx.restore();
-            }
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.moveTo(75, 40);
+            ctx.bezierCurveTo(75, 37, 70, 25, 50, 25);
+            ctx.bezierCurveTo(20, 25, 20, 62.5, 20, 62.5);
+            ctx.bezierCurveTo(20, 80, 40, 102, 75, 120);
+            ctx.bezierCurveTo(110, 102, 130, 80, 130, 62.5);
+            ctx.bezierCurveTo(130, 62.5, 130, 25, 100, 25);
+            ctx.bezierCurveTo(85, 25, 75, 37, 75, 40);
+            ctx.fill();
+            ctx.restore();
         }
     }
 
-    function handleParticles() {
-        for (let i = 0; i < particles.length; i++) {
-            particles[i].update();
-            particles[i].draw();
-            if (particles[i].size <= 0.2) {
-                particles.splice(i, 1);
-                i--;
-            }
-        }
-    }
+    const render = () => {
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((p, i) => {
+            p.update();
+            p.draw();
+            if (p.size < 0.2) { particles.splice(i, 1); i--; }
+        });
+        requestAnimationFrame(render);
+    };
+    render();
 
-    // --- Falling Leaves Effect Logic ---
-    const leafContainer = document.getElementById('falling-leaves-container');
+    /* -------------------------------------------------------
+     * 🍂 FALLING LEAVES
+     * ------------------------------------------------------- */
+    const leafContainer = document.getElementById("falling-leaves-container");
     if (leafContainer) {
-        const numberOfLeaves = 50; 
+        const count = 25;
 
-        for (let i = 0; i < numberOfLeaves; i++) {
+        for (let i = 0; i < count; i++) {
             const leaf = document.createElement('div');
-            leaf.classList.add('leaf');
-            
-            // Randomize properties for a natural look
+            leaf.classList.add("leaf");
+
             leaf.style.left = `${Math.random() * 100}vw`;
-            leaf.style.animationDuration = `${Math.random() * 8 + 7}s`; // Duration between 7s and 15s
-            leaf.style.animationDelay = `-${Math.random() * 10}s`; // Negative delay starts them mid-animation
-            leaf.style.opacity = String(Math.random() * 0.6 + 0.4); // Opacity from 0.4 to 1.0
-            
-            const size = Math.random() * 10 + 5; // size from 5px to 15px
+            leaf.style.animationDuration = `${Math.random() * 8 + 7}s`;
+            leaf.style.animationDelay = `-${Math.random() * 10}s`;
+            leaf.style.opacity = String(Math.random() * 0.6 + 0.4);
+
+            const size = Math.random() * 10 + 5;
             leaf.style.width = `${size}px`;
             leaf.style.height = `${size}px`;
-            leaf.style.backgroundColor = `hsl(330, 100%, ${Math.random() * 15 + 75}%)`; // Shades of pink
-            
+            leaf.style.backgroundColor = `hsl(330, 100%, ${75 + Math.random() * 15}%)`;
+
             leafContainer.appendChild(leaf);
         }
     }
 
-    function animate() {
-        if (ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-        handleParticles();
-        requestAnimationFrame(animate);
-    }
-
-    animate();
 });

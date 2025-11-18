@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Táº­p san ká»· niá»‡m 20-11</title>
+    <title>Tập san kỷ niệm 20-11</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -13,38 +13,35 @@
 <body>
     <div id="falling-leaves-container"></div>
 
-    <!-- Ã‚M THANH -->
+    <!-- ÂM THANH -->
     <audio id="background-music" loop src="/assets/music.mp3"></audio>
 
     <div class="volume-container">
-        <span id="volume-icon" role="button" aria-label="Mute or unmute audio">ðŸ”Š</span>
+        <span id="volume-icon" role="button" aria-label="Mute or unmute audio">🔊</span>
         <input type="range" id="volume-slider" min="0" max="100" value="40" aria-label="Volume control" />
     </div>
 
-    <!-- ===== SOUND BAR TRÃI ===== -->
-    <div id="sound-left" class="sound-visualizer">
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-    </div>
+  <div id="sound-right-corner" class="sound-visualizer">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+</div>
+</div>
 
-    <!-- ===== SOUND BAR PHáº¢I ===== -->
-    <div id="sound-right" class="sound-visualizer">
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-    </div>
 
     <canvas id="sparkle-canvas"></canvas>
 
-    <h1 class="running-text">ChÃ o má»«ng ká»‰ niá»‡m ngÃ y nhÃ  giÃ¡o Viá»‡t Nam 20/11</h1>
+    <h1 class="running-text">Chào mừng kỉ niệm ngày nhà giáo Việt Nam 20/11</h1>
 
     <div class="book-container">
-        <!-- wrapper Ä‘á»ƒ thay Ä‘á»•i cÃ¡ch cÄƒn: right | center | left -->
+        <!-- wrapper để thay đổi cách căn: right | center | left -->
         <div class="book-wrapper align-right" id="bookWrapper">
             <div class="book" id="book">
                 <div class="book-spine"></div>
@@ -153,7 +150,7 @@
             </div>
         </div>
 
-        <div class="instructions">Click vÃ o trang Ä‘á»ƒ láº­t sÃ¡ch</div>
+        <div class="instructions">Click vào trang để lật sách</div>
     </div>
 
     <script type="module" src="/index.ts"></script>
